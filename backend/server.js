@@ -3,6 +3,8 @@ import http from "http";
 import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
+import { connectKafka, sendAnalytics } from "./services/kafkaService.js";
+connectKafka();
 
 // Import Custom Logic & Helpers
 import { incrementWin } from "./db/index.js";
@@ -48,11 +50,16 @@ const processMove = async (gameId, col, playerId) => {
 
   // Update board state
   game.board[row][col] = currentPlayer.symbol;
-
+  // Send event to Kafka
+  sendAnalytics("MOVE_MADE", {
+    gameId,
+    player: currentPlayer.name,
+    column: col,
+  });
   if (checkWin(game.board, row, col, currentPlayer.symbol)) {
     game.status = "finished";
     const winnerName = currentPlayer.name;
-
+    sendAnalytics("GAME_FINISHED", { gameId, winner: winnerName });
     // Save to DB if winner is not the bot
     if (!currentPlayer.isBot) {
       await incrementWin(winnerName);
