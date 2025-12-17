@@ -1,0 +1,8 @@
+CREATE DATABASE IF NOT EXISTS four_in_a_row;
+USE four_in_a_row;
+
+CREATE TABLE IF NOT EXISTS players (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    wins INT DEFAULT 0
+);
