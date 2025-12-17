@@ -27,7 +27,7 @@ function Leaderboard() {
 
   return (
     <div className="leaderboard-container">
-      <h3>🏆 Top Players</h3>
+      <h3> Top Players</h3>
       <table>
         <thead>
           <tr>

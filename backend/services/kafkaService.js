@@ -1,9 +1,10 @@
-import { Kafka } from "kafkajs";
+import { Kafka, logLevel } from "kafkajs";
 
 const kafka = new Kafka({
   clientId: "four-in-a-row-server",
   // Brokers list from .env or default to localhost
   brokers: [process.env.KAFKA_BROKER || "localhost:9092"],
+  logLevel: logLevel.NOTHING,
   // Add a connection timeout so it doesn't wait forever if Kafka is down
   connectionTimeout: 3000,
 });

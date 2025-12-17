@@ -16,8 +16,8 @@ body {
   align-items: center;
   width: 100%;
   padding: 20px;
-  border: 2px solid #333;
-  box-shadow: #ae9898 0px 0px 10px;
+  /* border: 2px solid #333; */
+  box-shadow: #ae9898 0px 0px 15px;
 
   background-color: #393e46;
 }
@@ -34,6 +34,10 @@ body {
 h1,
 h3 {
   color: black;
+
+  display: flex;
+
+  justify-content: center;
 
   font-family: "Times New Roman", Times, serif;
 }
@@ -135,7 +139,7 @@ button:active {
 
   /* background: #e3e3e3; */
   background: #00adb5;
-  padding: 20px;
+  /* padding: 20px; */
   /* border-radius: 15px; */
   box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
 }
@@ -149,11 +153,12 @@ table {
 th,
 td {
   padding: 12px;
+  color: #4d4b4b;
   border-bottom: 1px solid #eee;
 }
 
 th {
-  color: #666;
+  color: #4a4545;
   text-transform: uppercase;
   font-size: 0.8rem;
   letter-spacing: 1px;
