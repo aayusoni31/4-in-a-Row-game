@@ -8,30 +8,35 @@ import "./App.css";
 function App() {
   const [gameState, setGameState] = useState(null);
   const [isWaiting, setIsWaiting] = useState(false);
+  // This is the new state to hold our top players list
+  const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
-    // 1. If user refreshed the page, automatically try to put them back in the game.
+    // If you refresh the page, this check sees if your name is in the "browser memory"
+    // and tries to throw you back into your active game automatically.
     const savedUser = localStorage.getItem("fourInARowUser");
     if (savedUser && !gameState) {
       socket.emit("join_game", { username: savedUser });
     }
 
-    // 2. Socket Listeners
+    // This triggers when you're in the queue but no one else has joined yet.
     socket.on("waiting_for_opponent", () => {
       setIsWaiting(true);
     });
 
+    // When a match is found (or a bot is spawned), we get the game data here.
     socket.on("game_started", (data) => {
       setIsWaiting(false);
       setGameState(data);
 
-      // Save user to localStorage for reconnection support
+      // We save your name so if you accidentally refresh, we know who you are.
       const myName = data.players.find((p) => p.id === socket.id)?.name;
       if (myName) {
         localStorage.setItem("fourInARowUser", myName);
       }
     });
 
+    // Every time someone drops a piece, the server tells us the new board state.
     socket.on("move_made", (data) => {
       setGameState((prev) => ({
         ...prev,
@@ -40,6 +45,7 @@ function App() {
       }));
     });
 
+    // When someone wins or the board is full, the server sends the final result.
     socket.on("game_over", (data) => {
       setGameState((prev) => ({
         ...prev,
@@ -49,12 +55,20 @@ function App() {
       }));
     });
 
-    // Cleanup listeners on unmount
+    // THIS IS THE FIX: The server screams "Hey, the leaderboard changed!"
+    // and we catch that data here to update our UI list.
+    socket.on("update_leaderboard", (data) => {
+      console.log("Leaderboard updated via socket!");
+      setLeaderboard(data);
+    });
+
+    // Good practice: Stop listening to these events if the component closes.
     return () => {
       socket.off("waiting_for_opponent");
       socket.off("game_started");
       socket.off("move_made");
       socket.off("game_over");
+      socket.off("update_leaderboard");
     };
   }, [gameState]);
 
@@ -64,36 +78,26 @@ function App() {
   };
 
   const handleQuit = () => {
-    localStorage.removeItem("fourInARowUser"); // Deletes the saved name
-    setGameState(null); // Hides the game board
-    setIsWaiting(false); // Resets waiting status
-    window.location.reload(); // Refreshes to ensure a clean socket state
+    localStorage.removeItem("fourInARowUser");
+    setGameState(null);
+    setIsWaiting(false);
+    window.location.reload(); // Hard refresh to make sure everything is clean
   };
+
   return (
     <div className="App">
       {!gameState ? (
         <div className="lobby-wrapper">
           <Lobby onJoin={handleJoin} isWaiting={isWaiting} />
-          <Leaderboard />
+          {/* We pass the leaderboard state down to the component to show it */}
+          <Leaderboard data={leaderboard} />
         </div>
       ) : (
         <div className="game-wrapper">
           <Game gameState={gameState} socketId={socket.id} />
 
-          {/* Back to Lobby button visible only when game is finished */}
           {gameState.status === "finished" && (
-            <button
-              onClick={handleQuit}
-              style={{
-                marginTop: "10px",
-                padding: "10px 20px",
-                background: "#666",
-                color: "white",
-                border: "none",
-                borderRadius: "8px",
-                cursor: "pointer",
-              }}
-            >
+            <button onClick={handleQuit} className="exit-btn">
               Exit to Lobby
             </button>
           )}
