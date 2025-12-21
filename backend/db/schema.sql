@@ -6,3 +6,9 @@ CREATE TABLE IF NOT EXISTS players (
     username VARCHAR(255) UNIQUE NOT NULL,
     wins INT DEFAULT 0
 );
+-- PostgreSQL Schema
+CREATE TABLE IF NOT EXISTS players (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    wins INT DEFAULT 0
+);
