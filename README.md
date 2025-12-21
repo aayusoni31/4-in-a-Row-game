@@ -27,7 +27,7 @@ A robust, full-stack, real-time implementation of the classic "Connect Four" gam
 ###  Live Deployment
 
 The application is fully deployed and accessible:
-- **Frontend**: https://4-in-a-row-game-i91lur81n-aayushi-s-projects-d4e5c07e.vercel.app
+- **Frontend**: https://4-in-a-row-game-rust.vercel.app/
 - **Backend**: https://four-in-a-row-game-backend.onrender.com
 - **Database**: PostgreSQL (Hosted on Render)
 
