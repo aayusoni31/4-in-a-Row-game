@@ -26,16 +26,32 @@ connectKafka();
 
 // 2. Setup Express and HTTP Server
 const app = express();
-app.use(cors());
+
+// FIX 1: Updated Express CORS (No trailing slash)
+app.use(
+  cors({
+    origin: [
+      "https://4-in-a-row-game-rust.vercel.app",
+      "http://localhost:5173",
+    ],
+    credentials: true,
+  })
+);
+
 app.use(express.json());
 
 const server = http.createServer(app);
 
 // 3. Setup Socket.io
+// FIX 2: Updated Socket.io CORS (No trailing slash)
 const io = new Server(server, {
   cors: {
-    origin: "http://localhost:5173",
+    origin: [
+      "https://4-in-a-row-game-rust.vercel.app",
+      "http://localhost:5173",
+    ],
     methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 
@@ -43,7 +59,6 @@ const io = new Server(server, {
 const activeGames = new Map();
 
 // --- THE LEADERBOARD UPDATER ---
-// This grabs the top 10 players from MySQL and pushes them to all connected users
 const broadcastLeaderboard = async () => {
   try {
     const topPlayers = await getTopPlayers();
@@ -63,26 +78,22 @@ const processMove = async (gameId, col, playerId) => {
   if (!currentPlayer || currentPlayer.symbol !== game.turn) return;
 
   const row = getLowestEmptyRow(game.board, col);
-  if (row === -1) return; // Column is full
+  if (row === -1) return;
 
-  // Update board
   game.board[row][col] = currentPlayer.symbol;
 
-  // Log move to Kafka
   sendAnalytics("MOVE_MADE", {
     gameId,
     player: currentPlayer.name,
     column: col,
   });
 
-  // Check for a winner
   if (checkWin(game.board, row, col, currentPlayer.symbol)) {
     game.status = "finished";
     const winnerName = currentPlayer.name;
 
     sendAnalytics("GAME_FINISHED", { gameId, winner: winnerName });
 
-    // If a human won, update MySQL and refresh the leaderboard UI
     if (!currentPlayer.isBot) {
       await incrementWin(winnerName);
       await broadcastLeaderboard();
@@ -93,18 +104,15 @@ const processMove = async (gameId, col, playerId) => {
       winner: winnerName,
     });
   } else if (isBoardFull(game.board)) {
-    // Check for a draw
     game.status = "finished";
     io.to(gameId).emit("game_over", { board: game.board, winner: "draw" });
   } else {
-    // Switch turns
     game.turn = game.turn === PLAYER_1 ? PLAYER_2 : PLAYER_1;
     io.to(gameId).emit("move_made", {
       board: game.board,
       nextTurn: game.turn,
     });
 
-    // Handle Bot's turn if applicable
     const nextPlayer = game.players.find((p) => p.symbol === game.turn);
     if (nextPlayer && nextPlayer.isBot) {
       setTimeout(() => {
@@ -120,7 +128,6 @@ io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
   socket.on("join_game", ({ username }) => {
-    // Handle Reconnection Logic
     for (const [gameId, game] of activeGames.entries()) {
       const isPlayerInGame = game.players.find((p) => p.name === username);
       if (isPlayerInGame && game.status === "playing") {
@@ -130,7 +137,6 @@ io.on("connection", (socket) => {
         return;
       }
     }
-    // New Player Matchmaking
     handleJoinQueue(socket, username, io, activeGames);
   });
 
@@ -153,10 +159,9 @@ io.on("connection", (socket) => {
   });
 });
 
-// REST Routes
 app.use("/api/leaderboard", leaderboardRoute);
 
 const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(` Game Server running on http://localhost:${PORT}`);
+  console.log(` Game Server running on port ${PORT}`);
 });
