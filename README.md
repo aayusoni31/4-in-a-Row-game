@@ -24,14 +24,21 @@ A robust, full-stack, real-time implementation of the classic "Connect Four" gam
 - **Kafka Integration**: Gameplay events (moves, wins, starts) are emitted to a Kafka broker for decoupled, non-blocking analytics processing.
 
 ---
+###  Live Deployment
 
+The application is fully deployed and accessible:
+- **Frontend**: https://4-in-a-row-game-i91lur81n-aayushi-s-projects-d4e5c07e.vercel.app
+- **Backend**: https://four-in-a-row-game-backend.onrender.com
+- **Database**: PostgreSQL (Hosted on Render)
+
+---
 ##  Tech Stack
 
 | Layer | Technology |
 | :--- | :--- |
 | **Frontend** | React.js, Vite, Axios, Socket.io-client |
 | **Backend** | Node.js (ESM), Express.js, Socket.io |
-| **Database** | MySQL (Persistence), In-memory Maps (Game State) |
+| **Database** | PostgreSQL (Production), MySQL (Local) |
 | **Messaging** | Kafka (Analytics Pipeline) |
 | **Styling** | Custom CSS3 (Responsive Design, Flexbox, Shadows) |
 
@@ -50,8 +57,14 @@ CREATE TABLE IF NOT EXISTS players (
     username VARCHAR(255) UNIQUE NOT NULL,
     wins INT DEFAULT 0
 );
-
+-- For PostgreSQL (Cloud/Render)
+CREATE TABLE IF NOT EXISTS players (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(255) UNIQUE NOT NULL,
+    wins INT DEFAULT 0
+);
 ```
+
 ---
 ### 2. Environment Variables
 Create a file named `.env` inside the `backend` folder and populate it with your local configuration:
@@ -88,5 +101,4 @@ To process the gameplay events, ensure you have a Kafka broker running at localh
 node analyticsService.js
 ```
 ---
-
 
