@@ -4,10 +4,7 @@ import { Server } from "socket.io";
 import cors from "cors";
 import dotenv from "dotenv";
 
-// Import Kafka service
 import { connectKafka, sendAnalytics } from "./services/kafkaService.js";
-
-// Import Database and Logic helpers
 import { incrementWin, getTopPlayers } from "./db/index.js";
 import leaderboardRoute from "./routes/leaderboard.js";
 import {
@@ -20,56 +17,58 @@ import { handleJoinQueue } from "./state/matchMaker.js";
 import { getBestMove } from "./logic/botLogic.js";
 import { PLAYER_1, PLAYER_2 } from "./utils/constants.js";
 
-// 1. Initialize environment variables and Kafka
 dotenv.config();
 connectKafka();
 
-// 2. Setup Express and HTTP Server
 const app = express();
 
-// FIX 1: Updated Express CORS (No trailing slash)
+// --- DYNAMIC CORS SETUP ---
+const allowedOrigins = [
+  "https://4-in-a-row-game-rust.vercel.app",
+  "http://localhost:5173",
+  "http://localhost:3000",
+];
+
 app.use(
   cors({
-    origin: [
-      "https://4-in-a-row-game-rust.vercel.app",
-      "http://localhost:5173",
-    ],
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) === -1) {
+        return callback(new Error("CORS Policy: Origin not allowed"), false);
+      }
+      return callback(null, true);
+    },
     credentials: true,
   })
 );
 
 app.use(express.json());
-
 const server = http.createServer(app);
 
-// 3. Setup Socket.io
-// FIX 2: Updated Socket.io CORS (No trailing slash)
+// --- SOCKET.IO SETUP WITH WEBSOCKET PREFERENCE ---
 const io = new Server(server, {
   cors: {
-    origin: [
-      "https://4-in-a-row-game-rust.vercel.app",
-      "http://localhost:5173",
-    ],
+    origin: allowedOrigins,
     methods: ["GET", "POST"],
     credentials: true,
   },
+  // Ensure we support websockets primarily
+  transports: ["websocket", "polling"],
 });
 
-// 4. Global state for games
 const activeGames = new Map();
 
-// --- THE LEADERBOARD UPDATER ---
 const broadcastLeaderboard = async () => {
   try {
     const topPlayers = await getTopPlayers();
     io.emit("update_leaderboard", topPlayers);
-    console.log(" Fresh leaderboard sent to all clients!");
+    console.log("Fresh leaderboard sent to all clients!");
   } catch (err) {
-    console.error(" Failed to broadcast leaderboard:", err);
+    console.error("Failed to broadcast leaderboard:", err);
   }
 };
 
-// --- THE CORE GAME ENGINE ---
 const processMove = async (gameId, col, playerId) => {
   const game = activeGames.get(gameId);
   if (!game || game.status !== "playing") return;
@@ -123,7 +122,6 @@ const processMove = async (gameId, col, playerId) => {
   }
 };
 
-// --- SOCKET EVENT HANDLERS ---
 io.on("connection", (socket) => {
   console.log(`User Connected: ${socket.id}`);
 
@@ -162,6 +160,6 @@ io.on("connection", (socket) => {
 app.use("/api/leaderboard", leaderboardRoute);
 
 const PORT = process.env.PORT || 3001;
-server.listen(PORT, () => {
-  console.log(` Game Server running on port ${PORT}`);
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Game Server running on port ${PORT}`);
 });
