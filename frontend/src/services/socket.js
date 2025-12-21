@@ -2,6 +2,11 @@
 // here the websocket connection is established
 import { io } from "socket.io-client";
 
-const socket = io("http://localhost:3001");
+// Use the Render link from Vercel Envs, or localhost for dev
+const URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:3001";
+
+const socket = io(URL, {
+  autoConnect: true,
+});
 
 export default socket;
