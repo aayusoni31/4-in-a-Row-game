@@ -29,27 +29,29 @@ const allowedOrigins = [
   "http://localhost:3000",
 ];
 
-app.use(
-  cors({
-    origin: function (origin, callback) {
-      // Allow requests with no origin (like mobile apps or curl)
-      if (!origin) return callback(null, true);
-      if (allowedOrigins.indexOf(origin) === -1) {
-        return callback(new Error("CORS Policy: Origin not allowed"), false);
-      }
-      return callback(null, true);
-    },
-    credentials: true,
-  })
-);
+// app.use(
+//   cors({
+//     origin: function (origin, callback) {
+//       // Allow requests with no origin (like mobile apps or curl)
+//       if (!origin) return callback(null, true);
+//       if (allowedOrigins.indexOf(origin) === -1) {
+//         return callback(new Error("CORS Policy: Origin not allowed"), false);
+//       }
+//       return callback(null, true);
+//     },
+//     credentials: true,
+//   })
+// );
 
+app.use(cors());
 app.use(express.json());
 const server = http.createServer(app);
 
 // --- SOCKET.IO SETUP WITH WEBSOCKET PREFERENCE ---
 const io = new Server(server, {
   cors: {
-    origin: allowedOrigins,
+    // origin: allowedOrigins,
+    origin: "*",
     methods: ["GET", "POST"],
     credentials: true,
   },
